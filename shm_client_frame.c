@@ -5,6 +5,9 @@
 #include <pthread.h>
 #include <sys/mman.h>
 // ADD NECESSARY HEADERS
+#include <sys/types.h>
+#define SMH_NAME "zhenda_renjie"
+#define PAGESIZE 4096
 
 // Mutex variables
 pthread_mutex_t* mutex;
@@ -30,7 +33,8 @@ int main(int argc, char *argv[]) {
     pthread_mutex_lock(mutex);
         
 	// client updates available segment
-		
+	int shm_fd = shm_open(SHM_NAME, O_RDWR, 0660);
+	void *shm_ptr = mmap(NULL, PAGESIZE, PROT_READ |PROT_WRITE, MAP_SHARED, shm_fd, 0);		
 	pthread_mutex_unlock(mutex);
     // critical section ends
         

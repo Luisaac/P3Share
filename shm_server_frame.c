@@ -5,6 +5,10 @@
 #include <pthread.h>
 #include <sys/mman.h>
 // ADD NECESSARY HEADERS
+#include <sys\types.h>
+#define SHM_NAME "zhenda_renjie"
+#define PAGESIZE 4096 
+
 
 // Mutex variables
 pthread_mutex_t* mutex;
@@ -23,7 +27,10 @@ int main(int argc, char *argv[])
 	
 	// Creating a new shared memory segment
 	int fd_shm = shm_open(SHM_NAME, O_RDWR | O_CREAT, 0660);	
-        
+	ftruncate = (fd_shm, PAGESIZE);       
+	void *shm_ptr = void *mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+	 //maybe use memcpy to cpy struct to shm_ptr
+	
     // Initializing mutex
 	pthread_mutexattr_init(&mutexAttribute);
 	pthread_mutexattr_setpshared(&mutexAttribute, PTHREAD_PROCESS_SHARED);
