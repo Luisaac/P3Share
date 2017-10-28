@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <string.h>
 // ADD NECESSARY HEADERS
 #define SHM_NAME "zhenda_renjie"
 #define PAGESIZE 4096 
@@ -25,30 +26,42 @@ typedef struct {
     int elapsed_sec;
     double elapsed_msec;
     int inuse;
+    int index;
 } stats_t;
+
+// Global variables
+void *shm_ptr;
+
 
 void exit_handler(int sig) 
 {
     // ADD
-    
+    munmap(shm_ptr, PAGESIZE);
+    shm_unlink(SHM_NAME);
 	exit(0);
 }
 
 int main(int argc, char *argv[]) 
 {
     // ADD
+	//Signals
+	struct sigaction act;
+	act.sa_handler = exit_handler;
+	sigaction(SIGINT, &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
+
 	
 	// Creating a new shared memory segment
 	int fd_shm = shm_open(SHM_NAME, O_RDWR | O_CREAT, 0660);	
 	ftruncate(fd_shm, PAGESIZE);       
-	void *shm_ptr = (void*) mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+	shm_ptr = (void*) mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
 	//mutex = (pthread_mutex_t*) mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
-
+	shm_ptr = memset(shm_ptr, 0, PAGESIZE);
 	mutex = (pthread_mutex_t*) shm_ptr;
-	for (int i = 1; i < 64; i++) {
-		stats_t* curr = (stats_t*)(shm_ptr+(i*64));
-		curr->inuse = 0;
-	}
+	// for (int i = 1; i < 64; i++) {
+	// 	stats_t* curr = (stats_t*)(shm_ptr+(i*64));
+	// 	curr->inuse = 0;
+	// }
 	 //maybe use memcpy to cpy struct to shm_ptr
 
 	

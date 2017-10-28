@@ -8,6 +8,7 @@
 #include <time.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/time.h>
 // ADD NECESSARY HEADERS
 #define SHM_NAME "zhenda_renjie"
 #define PAGESIZE 4096
@@ -21,20 +22,25 @@ typedef struct {
     int elapsed_sec;
     double elapsed_msec;
     int inuse;
+    int index;
 } stats_t;
 
 
 // Mutex variables
 pthread_mutex_t* mutex;
 
+// Global variables
+stats_t* curr;
+void* shm_ptr;
+
 void exit_handler(int sig) {
     // ADD
-    // set inuse to zero
 
     // critical section begins
 	pthread_mutex_lock(mutex);
 
     // Client leaving; needs to reset its segment   
+	memset(shm_ptr+(curr->index*64), 0, 64);
 
 	pthread_mutex_unlock(mutex);
 	// critical section ends
@@ -43,27 +49,49 @@ void exit_handler(int sig) {
 }
 
 int main(int argc, char *argv[]) {
-	// Signals
-	// struct sigaction act;
-	// act.sa_handler = exit_handler;
 
+	//TODO handle argc != 1 and string too long
+
+
+	// timer
+	struct timeval t1,t2;
+	gettimeofday(&t1, NULL);
+
+	//Signals
+	struct sigaction act;
+	act.sa_handler = exit_handler;
+	sigaction(SIGINT, &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
 
 	// ADD    
 	int shm_fd = shm_open(SHM_NAME, O_RDWR, 0660);
-	void *shm_ptr = mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);		
+	if (shm_fd == -1) {
+		exit(1);
+	}
+	shm_ptr = mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);		
+	if (shm_ptr == MAP_FAILED) {
+		exit(1);
+	}
 	mutex = (pthread_mutex_t*) shm_ptr;
     // critical section begins
     pthread_mutex_lock(mutex);
         
 	// client updates available segment
-    stats_t* curr;
+   
 	for (int i = 1; i < 64; i++) {
 		curr = (stats_t*)(shm_ptr+(i*64));
 		if (curr->inuse == 0) {
+			gettimeofday(&t2, NULL);
+			curr->elapsed_sec = t2.tv_sec - t1.tv_sec;
+			curr->elapsed_msec = (t2.tv_usec - t1.tv_usec)/1000;
+
+
+			curr->index = i;
 			curr->inuse = 1;
 			curr->pid = getpid();
 			time_t t = time(NULL);
-			strcpy(curr->birth, ctime(&t));
+			strncpy(curr->birth, ctime(&t), strlen(ctime(&t))-1);
+			strcpy(curr->clientString, argv[1]);
 			//TODO elapsed time
 			break;
 		}
@@ -78,9 +106,11 @@ int main(int argc, char *argv[]) {
         
 		// ADD
         //TODO update elapsed time
+        gettimeofday(&t2, NULL);
+		curr->elapsed_sec = t2.tv_sec - t1.tv_sec;
+		curr->elapsed_msec = (t2.tv_usec - t1.tv_usec)/1000;
 
   
-
 
 		// Print active clients
 		printf("Active clients :");
