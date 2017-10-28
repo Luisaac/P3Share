@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <signal.h>
 // ADD NECESSARY HEADERS
 #define SHM_NAME "zhenda_renjie"
 #define PAGESIZE 4096 
