@@ -40,11 +40,13 @@ void exit_handler(int sig) {
 	pthread_mutex_lock(mutex);
 
     // Client leaving; needs to reset its segment   
-	memset(shm_ptr+(curr->index*64), 0, 64);
-	munmap(shm_ptr, PAGESIZE);
-    shm_unlink(SHM_NAME);
-
+	//memset(shm_ptr+(curr->index*64), 0, 64);
+	memset(curr, 0, 64);
 	pthread_mutex_unlock(mutex);
+	//munmap(shm_ptr, PAGESIZE);
+   	//shm_unlink(SHM_NAME);
+
+
 	// critical section ends
 
     exit(0);
@@ -71,12 +73,12 @@ int main(int argc, char *argv[]) {
 	// ADD    
 	int shm_fd = shm_open(SHM_NAME, O_RDWR, 0660);
 	if (shm_fd == -1) {
-		fprintf(stderr, "%s\n", "Open shared memory error.");
+		fprintf(stderr, "%s\n", "Open shared memory error 1.");
 		exit(1);
 	}
 	shm_ptr = mmap(NULL, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);		
 	if (shm_ptr == MAP_FAILED) {
-		fprintf(stderr, "%s\n", "Open shared memory error.");
+		fprintf(stderr, "%s\n", "Open shared memory error 2.");
 		exit(1);
 	}
 	mutex = (pthread_mutex_t*) shm_ptr;
@@ -123,7 +125,9 @@ int main(int argc, char *argv[]) {
   
 
 		// Print active clients
-		printf("Active clients :");
+
+        sleep(1);
+        printf("Active clients :");
        	for (int i = 1; i < 64; i++) {
 			stats_t* itr = (stats_t*)(shm_ptr+(i*64));
 			if (itr->inuse == 1) {
@@ -131,7 +135,6 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		printf("\n");
-        sleep(1);
     }
 
     return 0;

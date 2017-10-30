@@ -36,14 +36,17 @@ void *shm_ptr;
 void exit_handler(int sig) 
 {
     // ADD
-    for (int i = 1; i < 64; i++) {
-		stats_t* curr = (stats_t*)(shm_ptr+(i*64));
-		if (curr->inuse == 1) {
-			kill(curr->pid, 0);
-		}
-	}
+    pthread_mutex_lock(mutex);
+ //    for (int i = 1; i < 64; i++) {
+	// 	stats_t* curr = (stats_t*)(shm_ptr+(i*64));
+	// 	if (curr->inuse == 1) {
+	// 		kill(curr->pid, 0);
+	// 	}
+	// }
+	pthread_mutex_unlock(mutex);
     munmap(shm_ptr, PAGESIZE);
     shm_unlink(SHM_NAME);
+
 	exit(0);
 }
 
@@ -81,11 +84,10 @@ int main(int argc, char *argv[])
 		// ADD
 		for (int i = 1; i < 64; i++) {
 			stats_t* curr = (stats_t*)(shm_ptr+(i*64));
-			if (curr->inuse == 0) {
-				break;
-			}
+			if (curr->inuse == 1) {			
 			printf("%d, pid : %d, birth : %s, elapsed : %d s %f ms, %s\n",
 						iteration, curr->pid, curr->birth, curr->elapsed_sec, curr->elapsed_msec, curr->clientString);
+			}
 		}
 
 		iteration++;
