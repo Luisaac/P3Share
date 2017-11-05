@@ -1,0 +1,1 @@
+Part A: The page size is 4096KB, which means there are maximum 63 clients. The first 64 KB is reserved for mutex. Anytime a new client comes in, assign 64 KB for the client. Use signal flag to handle the exit of clients. When the server ends, the client process will still be running (according to Piazza, we can do this).
